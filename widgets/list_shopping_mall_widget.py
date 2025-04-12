@@ -2,7 +2,7 @@
 from utils import parse_shoppingmall_data
 from textual.widget import Widget
 from textual.widget import Widget
-from textual.widgets import Button, TextArea, DataTable, Log
+from textual.widgets import Button, Label, DataTable
 from textual.app import ComposeResult
 from textual.containers import Container
 from textual import events, on
@@ -22,10 +22,10 @@ class ListShoppingMall(Widget):
         self.focus()
     
     def compose(self) -> ComposeResult:
-        with Container(id="output-list"):
-            yield TextArea("Select a region", id="list-text", read_only=True)
+        with Container(id="output-list", classes="display-out"):
+            yield Label("Select a region", id="list-text")
 
-        with Container(id="opt-list"):
+        with Container(id="opt-list", classes="menu"):
             for o, region in enumerate(self.regions,1):
                 btn = Button(f"{o}. {region}", id=f"region-{o}", classes="region-opt", variant="primary")
                 yield btn

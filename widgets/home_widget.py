@@ -1,11 +1,13 @@
-from utils import parse_shoppingmall_data
 from textual.widget import Widget
-from textual.widgets import Button, TextArea, DataTable, Log
+from textual.widgets import Button, Label, ProgressBar
 from textual.app import ComposeResult
-from textual.containers import Container
+from textual.containers import Container, Horizontal
 from textual import events, on
 import widgets.list_shopping_mall_widget as lsm
 import widgets.detailed_mall_widget as dm
+import widgets.nearest_malls_widget as nm
+from widgets.map import open_map
+import asyncio
 
 class HomeWidget(Widget):
     can_focus = True
@@ -28,10 +30,20 @@ class HomeWidget(Widget):
         self.focus()
     
     def compose(self) -> ComposeResult:
-        with Container(id="options"):
-            yield TextArea("Select an option", read_only=True)
+        with Container(id="di", classes="display-out"):
+             yield Label("Select an option")
+
+        with Container(id="options", classes="menu"):
             for num, opt in enumerate(self.options, 1):
-                yield Button(f"{num}. {opt}", id ="opt"+str(num) ,classes="home-opt",variant="primary")
+                if num == 4 or 3:
+                    with Horizontal():
+                        p = ProgressBar(id=f'p{num}',show_percentage=False, show_eta=False)
+                        p.display = False
+                        yield Button(f"{num}. {opt}", id ="opt"+str(num) ,classes="home-opt",variant="primary")
+                        yield p
+                        
+                else:
+                    yield Button(f"{num}. {opt}", id ="opt"+str(num) ,classes="home-opt",variant="primary")
     
     def on_key(self, event: events.Key) -> None:
         if not self.opt_disabled:
@@ -65,6 +77,41 @@ class HomeWidget(Widget):
         b.remove_children()
 
         b.mount(dm.DetailedMall())
+    
+    @on(Button.Pressed, "#opt3")
+    async def option_pressed_3(self):
+        b = self.app.query_one("#body", Container)
+        
+        self.disable_all_option()
+        b.remove_children()
+        k = self.app.query_one("#p3", ProgressBar)
+        k.display = True
+        await asyncio.sleep(0.1)
+        try:
+            b.mount(nm.NearestMalls())
+            k.display = False
+        except:
+            b.remove_children()
+            b.mount(HomeWidget())
+       
+
+    @on(Button.Pressed, "#opt4")
+    async def option_pressed_4(self):
+        b = self.app.query_one("#p4", ProgressBar)
+        b.display = True
+        try:
+            await asyncio.to_thread(open_map)
+        except:
+            b = self.app.query_one("#body", Container)
+            b.mount(Label("Sorry an error occured. Please try again later."))
+        b.display = False
+
+    
+
+    @on(Button.Pressed, "#opt5")
+    def exit(self):
+        self.app.exit()
+       
        
         
         

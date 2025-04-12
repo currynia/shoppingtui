@@ -1,25 +1,31 @@
-Screen {
-    background: $panel;
-}
-
-Input#dictionary-search {
-    dock: top;
-    margin: 1 0;
-}
-
-#results {
+#body {
     width: 100%;
-    height: auto;
-}
-
-#results-container {
-    background: $surface;
-    margin: 0 0 1 0;
     height: 100%;
-    overflow: hidden auto;
-    border: tall transparent;
+    overflow: auto;
 }
 
-#results-container:focus {
-    border: tall $border;
+.display-out {
+    height: 1fr;  /* Use fractional units for flexible sizing */
+    max-height: 50%;  /* But don't exceed 50% */
+    min-height: 10%;  /* Always have some minimum height */
+}
+
+.menu {
+    height: 1fr;  /* Also flexible */
+    max-height: 50%;
+    min-height: 10%;
+}
+
+Button {
+    margin: 1;
+    width: auto;  /* Allow buttons to resize */
+}
+
+Label {
+    margin: 0 1;
+    height: auto;  /* Allow labels to expand based on content */
+}
+
+#temp {
+    margin: 1;
 }

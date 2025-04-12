@@ -1,16 +1,11 @@
-from options.num import OptionsNum
-from utils import parse_shoppingmall_data
-import textwrap
-
-
 from utils import parse_shoppingmall_data
 from textual.widget import Widget
-from textual.widgets import Button, TextArea, DataTable, Log, Input
+from textual.widgets import Button, Label, DataTable, Input
 from textual.app import ComposeResult
 from textual.containers import Container
 from textual import events, on
 import widgets.home_widget as hw
-
+import widgets.mall_widget as mw
 
 class DetailedMall(Widget):
     can_focus = True
@@ -20,21 +15,61 @@ class DetailedMall(Widget):
         self.df = parse_shoppingmall_data()
         self.opt_disabled = False
         self.regions = ["North", "South", "East", "West", "Central"]
+        self.filtered = None
 
     def on_mount(self):
         self.focus()
     
     def compose(self) -> ComposeResult:
-        with Container(id="output-list"):
-            yield TextArea("Select the region of the mall you want to view", id="list-text", read_only=True)
+        with Container(id="output-list", classes="display-out"):
+            
+            yield Label("Select the region of the mall you want to view", id="list-text")
 
-        with Container(id="opt-list"):
+        with Container(id="opt-list", classes="menu"):
             for o, region in enumerate(self.regions,1):
                 btn = Button(f"{o}. {region}", id=f"region-{o}", classes="region-opt", variant="primary")
                 yield btn
+    
+    
+    def mount_malls(self, loc:str):
+        self.filtered = self.df[self.df["Region"] == loc].reset_index()
+        container = self.query_one("#output-list")
+        container.remove_children()
+        dt = DataTable()
+        dt.add_columns(*["Index", f"{loc} Malls"])
+        dt.add_rows(list(self.filtered[["Mall"]].itertuples(index=True, name=None)))
+        self.disable_all_option()
+        container.mount(dt)
+
+        opt = self.query_one("#opt-list")
+        opt.remove_children()
+        f = Input(id="mall_id", placeholder="Enter index of mall to view", type="integer")
+        l = Label(id="temp", renderable="Input a valid value")
+        l.visible = False
+        opt.mount(l)
+        opt.mount(f)
+        f.focus()
+
+
+    def display_mall(self):
+
+        idx = self.query_one("#mall_id", Input)
+        try:
+            data = self.filtered.loc[int(idx.value)]
+            container = self.app.query_one("#body")
+            container.remove_children()
+            container.mount(mw.Mall(data))
+            
+        except:
+            ta = Label()
+            ta.text = "Input a valid value."
+            self.query_one("#temp", Label).visible = True
+            self.recompose()
+            
 
     def on_key(self, event: events.Key) -> None:
         key = event.key
+       
         if not self.opt_disabled:
           
             if key.isdecimal():
@@ -43,13 +78,9 @@ class DetailedMall(Widget):
                     btn =self.query_one(f"#region-{button}", Button)
                     btn.press()
         else:
-            if key.isdecimal() and int(key) == 1:
-                tn =self.query_one(f"#list-back", Button)
-                tn.press()
-            elif key.isdecimal() and int(key) == 2:
-                tn =self.query_one(f"#list-home", Button)
-                tn.press()
-        event.stop()
+            if key == "enter":
+                self.display_mall()
+        
        
    
     def disable_all_option(self) -> None:
@@ -57,21 +88,9 @@ class DetailedMall(Widget):
             btn.disabled = True
         self.opt_disabled = True
 
-    def mount_malls(self, loc:str):
-        m = self.df[self.df["Region"] == loc].reset_index()
-        container = self.query_one("#output-list")
-        container.remove_children()
-        dt = DataTable()
-        dt.add_columns(*["Index", f"{loc} Malls"])
-        dt.add_rows(list(m[["Mall"]][1:].itertuples(index=True, name=None)))
-        self.disable_all_option()
-        container.mount(dt)
+    
+   
 
-        opt = self.query_one("#opt-list")
-        opt.remove_children()
-        opt.mount(Input(id="mall_id", placeholder="Enter index of mall to view", type="integer"))
-        # opt.mount(Button("1. Back", id="list-back", variant="primary"))
-        # opt.mount(Button("2. Home", id="list-home", variant="primary"))
 
     @on(Button.Pressed, "#list-back")
     def back_press(self):
